@@ -1,0 +1,22 @@
+Adapt the original py-faster-rcnn repository to fine tune a pre-trained imagenet model for face detection.
+
+Usage:
+	sh ./experiments/scripts/faster-rcnn_end2end.sh 1 VGG16 ijba
+
+Added files:
+	lib/datasets/face.py 							It defines a class to read face data.
+	lib/datasets/factory.py 						It supports of getting face imdb.
+	experiments/scripts/faster_rcnn_end2end.sh 		Added support for face data.
+	models/face/VGG16/*.prototxt					Caffe solvers, train and test prototxts.
+
+To train a faster-rcnn face detection model on another dataset, you only need to modify first three files. 
+1. For face.py, you have to tell it the paths of training images and their ground-truth annotations. In the current implementation, all these information are read from a txt file with the FDDB format. Please refer to /data2/hzjiang/Data/CS2/IJBA_detection/spli1/train_1_annot.txt for more details. In the code, you might need to read __init__(), _load_image_set_index(), and gt_roidb().
+
+2. In factory.py, you instantiate an instance of a face dataset like this:
+	ijba_devkit_path = '/data2/hzjiang/Data/CS2'
+	for split in xrange(0, 10):
+		name = 'ijba_train_split_%d' % split
+		__sets[name] = (lambda split = split: face('train', split, ijba_devkit_path))
+
+3. In faster_rcnn_end2end.sh, you need to add support of your dataset in "case $DATASET".
+
