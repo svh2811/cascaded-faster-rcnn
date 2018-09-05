@@ -7,7 +7,7 @@ sys.path.append("../../evaluation/")
 from util import rotate_image, adjust_image_size
 import pickle
 
-annotations_directory = "./annotations/current/"
+annotations_directory = "./char_anots_"+sys.argv[1]+"/current/"
 
 files = os.listdir(annotations_directory)
 
@@ -71,7 +71,7 @@ for k, mapname in enumerate(angles_by_map.keys()):
         annotations = open(fold_dir+"/test.txt", "w")
 
     #print("Writing map " + mapname)
-    map_img = cv2.imread("./maps/" + mapname + ".jpg")
+    map_img = cv2.imread("./maps_red/" + mapname + ".tiff")
     ######## Make room to rotate the image ####################
     padding_amount = 0
     #map_img, translate = adjust_image_size(map_img, padding_amount)
@@ -140,7 +140,7 @@ for k, mapname in enumerate(angles_by_map.keys()):
                 string = str(pt1[0]) + " " + str(pt1[1]) + " " + str(width) + " " + str(height)
 		annotations.write(string+"\n")
 
-            cv2.imwrite("./img/" + rot_image_name, rot_img)
+            #cv2.imwrite("./img/" + rot_image_name, rot_img)
 
 #        if os.path.isdir("./"+mapname) == False:
  #           os.mkdir("./"+mapname)

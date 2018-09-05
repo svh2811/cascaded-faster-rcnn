@@ -11,7 +11,7 @@ annotations_directory = "./annotations/current/"
 
 files = os.listdir(annotations_directory)
 
-fold = 4
+fold = 5
 total_maps = 0
 
 maps = {}
@@ -59,7 +59,11 @@ if os.path.isdir("./img/") == False:
 current_fold = 0
 annotations = None
 for k, mapname in enumerate(angles_by_map.keys()):
-
+    '''
+    print fold
+    print total_maps
+    print total_maps/fold
+    '''
     if k % (total_maps / fold) == 0:
         current_fold += 1
         fold_dir = "./fold_"+str(current_fold)
@@ -71,7 +75,7 @@ for k, mapname in enumerate(angles_by_map.keys()):
         annotations = open(fold_dir+"/test.txt", "w")
 
     #print("Writing map " + mapname)
-    map_img = cv2.imread("./maps/" + mapname + ".jpg")
+    map_img = cv2.imread("./maps/" + mapname + ".tiff")
     ######## Make room to rotate the image ####################
     padding_amount = 0
     #map_img, translate = adjust_image_size(map_img, padding_amount)
