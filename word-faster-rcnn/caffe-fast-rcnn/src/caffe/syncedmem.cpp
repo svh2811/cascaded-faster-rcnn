@@ -53,6 +53,7 @@ inline void SyncedMemory::to_gpu() {
   switch (head_) {
   case UNINITIALIZED:
     CUDA_CHECK(cudaGetDevice(&gpu_device_));
+    // LOG(INFO) << "Requested GPU memory is " << size_ << std::endl;
     CUDA_CHECK(cudaMalloc(&gpu_ptr_, size_));
     caffe_gpu_memset(size_, 0, gpu_ptr_);
     head_ = HEAD_AT_GPU;
