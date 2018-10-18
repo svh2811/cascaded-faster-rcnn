@@ -16,16 +16,24 @@ import math
 sys.path.append("../evaluation/")
 from util import rotate_image, adjust_image_size
 
-#NETS = {'vgg16': ('VGG16','./output/faster_rcnn_end2end/train/vgg16_faster_rcnn_map_iter_10010.caffemodel')}
+NETS = {'vgg16': ('VGG16','/mnt/nfs/work1/elm/ray/trained_models/vgg16_faster_rcnn_map_iter_0_16159.caffemodel')}
 
-NETS = {'vgg16': ('VGG16', '/mnt/nfs/work1/elm/ray/trained_models/vgg16_faster_rcnn_map_iter_a_16159.caffemodel')}
+#NETS = {'vgg16': ('VGG16','/media/ray/vgg16_faster_rcnn_map_iter_56159.caffemodel')}
+#NETS = {'vgg16': ('VGG16','../models/vgg16_faster_rcnn_map_iter_m_16159.caffemodel')}
+
 
 def get_imdb_map(data_dir):
 	imdb = []
 	#image_names = ['images/D0042-1070010.tiff', 'images/D0042-1070005.tiff']
 	#image_names = ['letmap00001.jpg', 'letmap00045.jpg', 'letmap00069.jpg', 'letmap00134.jpg']
-	#image_names = ['D0006-0285025.tiff'] 
 	
+	#image_names = ['D0006-0285025.tiff']
+	#image_names = ['D0041-5370006.tiff']
+	#image_names = ['D0079-0019007.tiff']
+	#image_names = ['D0117-5755036.tiff']
+	#image_names = ['D5005-5028100.tiff']
+	#image_names = ['D0006-0285025_0_36.tiff']
+	#'''
 	image_names = []
 	test_file_lines = open("./DataGeneration/"+"test.txt", "r").readlines()
 	for line in test_file_lines:
@@ -34,8 +42,8 @@ def get_imdb_map(data_dir):
 		        h,s,t = t.partition('.')
                 	h,s,t = h.partition('_')
                 	image_names.append(h+'.tiff')
-	print image_names
-	
+	#print image_names
+	#'''
 
 	imdb.append(image_names)
 
@@ -54,32 +62,34 @@ def vis_detections(im, title, dets, thresh):
 	cv2.waitKey(0)
 
 def save_detections(im, im_name, dets, thresh):
-	print("save_detections()::::", im_name)
+	font = cv2.FONT_HERSHEY_SIMPLEX
 	for i in xrange(dets.shape[0]):
-		bbox = dets[i, :4]
+		bbox = (dets[i, :4])
 		score = dets[i, -1]
 		if score > thresh:
-			cv2.rectangle(im, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 4)
+			cv2.rectangle(im, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(2*bbox[1]-bbox[3])), (0, 255, 0), 4)
+			#cv2.putText(im, str(score),(int(bbox[0]),int(bbox[1])), font, 0.6,(0,0,255),2,cv2.LINE_AA)
 	cv2.imwrite(im_name, im)
 
-#def rotate_image(mat, angle):
-#    height, width = mat.shape[:2]
-#    image_center = (width / 2, height / 2)
-#
-#    rotation_mat = cv2.getRotationMatrix2D(image_center, angle, 1)
-#
-#    radians = math.radians(angle)
-#    sin = math.sin(radians)
-#    cos = math.cos(radians)
-#    bound_w = int((height * abs(sin)) + (width * abs(cos)))
-#    bound_h = int((height * abs(cos)) + (width * abs(sin)))
-#
-#    rotation_mat[0, 2] += ((bound_w / 2) - image_center[0])
-#    rotation_mat[1, 2] += ((bound_h / 2) - image_center[1])
-#
-#   rotated_mat = cv2.warpAffine(mat, rotation_mat, (bound_w, bound_h))
-#    return rotated_mat
+'''
+def rotate_image(mat, angle):
+    height, width = mat.shape[:2]
+    image_center = (width / 2, height / 2)
 
+    rotation_mat = cv2.getRotationMatrix2D(image_center, angle, 1)
+
+    radians = math.radians(angle)
+    sin = math.sin(radians)
+    cos = math.cos(radians)
+    bound_w = int((height * abs(sin)) + (width * abs(cos)))
+    bound_h = int((height * abs(cos)) + (width * abs(sin)))
+
+    rotation_mat[0, 2] += ((bound_w / 2) - image_center[0])
+    rotation_mat[1, 2] += ((bound_h / 2) - image_center[1])
+
+    rotated_mat = cv2.warpAffine(mat, rotation_mat, (bound_w, bound_h))
+    return rotated_mat
+'''
 
 def im_detect_sliding_crop(net, im, crop_h, crop_w, step):
 	imh, imw, _ = im.shape
@@ -109,10 +119,13 @@ def im_detect_sliding_crop(net, im, crop_h, crop_w, step):
 			crop_boxes = crop_boxes[:, 4*cls_ind:4*(cls_ind + 1)]
 			crop_scores = crop_scores[:, cls_ind] + (0.01 * np.random.random() - 0.005)
 
-			crop_boxes[:,0] += x1
-			crop_boxes[:,1] += y1
-			crop_boxes[:,2] += x1
-			crop_boxes[:,3] += y1
+			crop_boxes[:,0] += x1	# change for flipped results
+			crop_boxes[:,1] += y1	# change for flipped results
+			crop_boxes[:,2] += x1	# change for flipped results
+			#crop_boxes[:,2] = x1 - crop_boxes[:,2]
+			crop_boxes[:,3] += y1	# change for flipped results
+			#crop_boxes[:,3] = crop_boxes[:,1]
+			#crop_boxes[:,3] = crop_boxes[:,1] - (crop_boxes[:,3] - crop_boxes[:,1])
 
 			boxes = np.vstack((boxes, crop_boxes))
 			scores = np.vstack((scores, crop_scores[:, np.newaxis]))
@@ -167,22 +180,26 @@ if __name__ == '__main__':
 	print '\n\nLoaded network {:s}'.format(caffemodel)
 
 	#data_dir = '/media/ray/maps_project/mapOutput_3/'
-	data_dir = '/home/supadhyay/supadhyay/cascaded-faster-rcnn/character-faster-rcnn/DataGeneration/maps_red'
-	work_dir = '/home/supadhyay/supadhyay/cascaded-faster-rcnn/character-faster-rcnn/DataGeneration/detections/'
+	#data_dir = '/media/ray/maps_project/faster-rcnn/'
+	#work_dir = '/media/ray/maps_project/faster-rcnn/detections/'
+	data_dir = './DataGeneration/maps_red/'
+	#data_dir = './'
+	work_dir = './detections/'
 	force_new = False
 
-	CONF_THRESH = 0.95
-	NMS_THRESH = 0.45
-	
+	CONF_THRESH = 0.9
+	NMS_THRESH = 0.1
+
+	'''
 	crop_w = 300
 	crop_h = 300
 	step = 100
 	'''
 
-	crop_w = 50
-	crop_h = 50
-	step = 40
-	'''
+	crop_w = 500
+	crop_h = 500
+	step = 400
+	#'''
 	imdb = get_imdb_map(data_dir)
 
 	# Warmup on a dummy image
@@ -193,9 +210,6 @@ if __name__ == '__main__':
 	nfold = len(imdb)
 	for i in xrange(nfold):
 		image_names = imdb[i]
-
-		print("\n\n")
-		print("image_names: ", image_names)
 
 		# detection file
 		dets_file_name = 'map_res/words-det-fold-%02d.txt' % (i + 1)
@@ -208,25 +222,21 @@ if __name__ == '__main__':
 
 			# Load the demo image
 			mat_name = im_name[:-4] + '.mat'
-			
-			print("\n\n")
-			print("mat_name: ", mat_name)
 
 			rot_box_filename = 'map_res/rot_box_'+im_name.split("/")[-1]+'_'+str(i+1)+'.pkl'
-			print("rot_box_filename: ", rot_box_filename)
-			
 			rot_file = open(rot_box_filename,"wb")
 			# print os.path.join(work_dir, mat_name)
 
-			print("Reading Image: ", os.path.join(data_dir, im_name))
+			print os.path.join(data_dir, im_name)
 
 			im = cv2.imread(os.path.join(data_dir, im_name))
+			#print os.path.join(data_dir, im_name)
 			#im, translation = adjust_image_size(im, padding_amount=500)
 			translation = (0, 0)
 			#print(im.shape)
 			
 			all_boxes, all_scores, all_rotations = [], [], []
-			for angle in range(0, 95, 5):
+			for angle in range(0, 95, 10):
 				#print("Running detection at angle: " + str(angle))
 				image_center = tuple(np.array((im.shape[0],im.shape[1]))/2)
 				R = cv2.getRotationMatrix2D(image_center, angle, scale=1.0)
@@ -239,7 +249,7 @@ if __name__ == '__main__':
 				# scores, boxes = im_detect(net, im)
 				scores, boxes = im_detect_sliding_crop(net, rot_img, crop_h, crop_w, step)
 				
-				print("Max Score: ", np.max(scores))
+				print(np.max(scores))
 				print("Boxes for angle " + str(angle) + ": " + str(boxes.shape[0]))				    
 				Rinv = cv2.getRotationMatrix2D(image_center, -angle, scale=1.0)
 
@@ -250,56 +260,52 @@ if __name__ == '__main__':
 				timer.toc()
 				print ('Detection took {:.3f}s for ''{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
-			print("\n\n")
 			pickle.dump([all_boxes, all_scores, all_rotations],rot_file)
 
 			dir_name, mat_name = os.path.split(im_name)
-			print("im_name:  ", im_name)
-			print("dir_name: ", dir_name)
-			print("mat_name: ", mat_name)
-			print("\n\n")
-
 			if not os.path.exists(os.path.join(work_dir, dir_name)):
-				print("Directory created")
-				os.makedirs(os.path.join(work_dir, dir_name))
+					os.makedirs(os.path.join(work_dir, dir_name))
 			
+			print(im_name)
 			fid.write(im_name + "\n")
-			print("File " + im_name + " written!")
-
+			#import pdb; pdb.set_trace()
 			for k in range(len(all_boxes)):
-				print("\n\n")
-				print("Iterating for k: ", k)
 				boxes = all_boxes[k]
 				scores = all_scores[k]
 				rot = all_rotations[k]
 				angle = rot['angle']
 
-				print("Writing angle to file")
 				fid.write("angle " + str(angle) + "\n")
 				#print("Boxes: " + str(len(boxes)))
 				res = {'boxes': boxes, 'scores': scores}
 				sio.savemat(os.path.join(work_dir, mat_name), res)
-				print("Saving {boxes, scores} dictionary")
-				
-				dets = np.hstack((boxes,scores)).astype(np.float32)
-				keep = nms(dets, NMS_THRESH)
-				dets = dets[keep, :]
 
+				dets = np.hstack((boxes,scores)).astype(np.float32)
+				# save dets for checks
+				np.save('dets_before_NMS.npy', dets)
+				keep = nms(dets, NMS_THRESH, force_cpu=False)
+				#import pdb; pdb.set_trace()
+	
+				dets = dets[keep, :]
+				# save dets for checks
+				np.save('dets_after_NMS.npy', dets)
 				keep = np.where(dets[:, 4] > CONF_THRESH)
 				dets = dets[keep]
-
+				# save dets for checks
+				np.save('dets_after_CONF.npy', dets)
 				#print("Detections: " + str(dets.shape))
-				save_detections(im, im_name, dets, CONF_THRESH)
+				#save_detections(im, im_name, dets, CONF_THRESH)
 
 				dets[:, 2] = dets[:, 2] - dets[:, 0] + 1
+				#dets[:, 2] = -dets[:, 2] + dets[:, 0] - 1
 				dets[:, 3] = dets[:, 3] - dets[:, 1] + 1
+				#dets[:, 3] = -dets[:, 3] + dets[:, 1] - 1
 
 				# timer.toc()
 				# print ('Detection took {:.3f}s for '
 				#        '{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
 				fid.write(str(dets.shape[0]) + '\n')
-				print("Wrote detections")
 				for j in xrange(dets.shape[0]):
 					fid.write('%f %f %f %f %f\n' % (dets[j, 0], dets[j, 1], dets[j, 2], dets[j, 3], dets[j, 4]))
 
@@ -312,3 +318,4 @@ if __name__ == '__main__':
 		fid.close()
 
 			
+
