@@ -16,7 +16,9 @@ import math
 sys.path.append("../evaluation/")
 from util import rotate_image, adjust_image_size
 
-NETS = {'vgg16': ('VGG16','./output/faster_rcnn_end2end/train/vgg16_faster_rcnn_map_iter_10010.caffemodel')}
+#NETS = {'vgg16': ('VGG16','./output/faster_rcnn_end2end/train/vgg16_faster_rcnn_map_iter_10010.caffemodel')}
+
+NETS = {'vgg16': ('VGG16', '/mnt/nfs/work1/elm/ray/trained_models/vgg16_faster_rcnn_map_iter_a_16159.caffemodel')}
 
 def get_imdb_map(data_dir):
 	imdb = []
@@ -31,7 +33,7 @@ def get_imdb_map(data_dir):
 			h,s,t = line.partition('/')
 		        h,s,t = t.partition('.')
                 	h,s,t = h.partition('_')
-                	image_names.append(h+'.jpg')
+                	image_names.append(h+'.tiff')
 	print image_names
 	
 
@@ -164,13 +166,12 @@ if __name__ == '__main__':
 	print '\n\nLoaded network {:s}'.format(caffemodel)
 
 	#data_dir = '/media/ray/maps_project/mapOutput_3/'
-	data_dir = '/media/ray/maps_project/faster-rcnn/'
-	work_dir = '/media/ray/maps_project/faster-rcnn/detections/'
+	data_dir = '/home/supadhyay/supadhyay/cascaded-faster-rcnn/character-faster-rcnn/DataGeneration/maps_red'
+	work_dir = '/home/supadhyay/supadhyay/cascaded-faster-rcnn/character-faster-rcnn/DataGeneration/maps_red/detections/'
 	force_new = False
 
 	CONF_THRESH = 0.95
 	NMS_THRESH = 0.45
-
 	
 	crop_w = 300
 	crop_h = 300
@@ -192,6 +193,8 @@ if __name__ == '__main__':
 	for i in xrange(nfold):
 		image_names = imdb[i]
 
+		print("\n\nimage_names: ", image_names)
+
 		# detection file
 		dets_file_name = 'map_res/words-det-fold-%02d.txt' % (i + 1)
 		fid = open(dets_file_name, 'w')
@@ -203,12 +206,15 @@ if __name__ == '__main__':
 
 			# Load the demo image
 			mat_name = im_name[:-4] + '.mat'
+			print("mat_name: ", mat_name)
 
 			rot_box_filename = 'map_res/rot_box_'+im_name.split("/")[-1]+'_'+str(i+1)+'.pkl'
+			print("rot_box_filename: ", rot_box_filename)
+			
 			rot_file = open(rot_box_filename,"wb")
 			# print os.path.join(work_dir, mat_name)
 
-			print os.path.join(data_dir, im_name)
+			print("Reading Image: ", os.path.join(data_dir, im_name))
 
 			im = cv2.imread(os.path.join(data_dir, im_name))
 			#im, translation = adjust_image_size(im, padding_amount=500)
@@ -240,13 +246,18 @@ if __name__ == '__main__':
 				timer.toc()
 				print ('Detection took {:.3f}s for ''{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
+			print("\n\n")
 			pickle.dump([all_boxes, all_scores, all_rotations],rot_file)
 
 			dir_name, mat_name = os.path.split(im_name)
+			print("im_name:  ", im_name)
+			print("dir_name: ", dir_name)
+			print("mat_name: ", mat_name)
+			print("\n\n")
+
 			if not os.path.exists(os.path.join(work_dir, dir_name)):
-					os.makedirs(os.path.join(work_dir, dir_name))
+				os.makedirs(os.path.join(work_dir, dir_name))
 			
-			print(im_name)
 			fid.write(im_name + "\n")
 			for k in range(len(all_boxes)):
 				boxes = all_boxes[k]
