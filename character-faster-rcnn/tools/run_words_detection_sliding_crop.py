@@ -16,7 +16,7 @@ import math
 sys.path.append("../evaluation/")
 from util import rotate_image, adjust_image_size
 
-NETS = {'vgg16': ('VGG16','/mnt/nfs/work1/elm/ray/trained_models/vgg16_faster_rcnn_map_iter_0_16159.caffemodel')}
+NETS = {'vgg16': ('VGG16','/mnt/nfs/work1/elm/ray/trained_models/vgg16_faster_rcnn_map_iter_a_16159.caffemodel')}
 
 #NETS = {'vgg16': ('VGG16','/media/ray/vgg16_faster_rcnn_map_iter_56159.caffemodel')}
 #NETS = {'vgg16': ('VGG16','../models/vgg16_faster_rcnn_map_iter_m_16159.caffemodel')}
@@ -26,7 +26,7 @@ def get_imdb_map(data_dir):
 	imdb = []
 	#image_names = ['images/D0042-1070010.tiff', 'images/D0042-1070005.tiff']
 	#image_names = ['letmap00001.jpg', 'letmap00045.jpg', 'letmap00069.jpg', 'letmap00134.jpg']
-	
+
 	#image_names = ['D0006-0285025.tiff']
 	#image_names = ['D0041-5370006.tiff']
 	#image_names = ['D0079-0019007.tiff']
@@ -46,7 +46,7 @@ def get_imdb_map(data_dir):
 	#'''
 
 	imdb.append(image_names)
-
+	print("Number of images: ", len(imdb))
 	return imdb
 
 def vis_detections(im, title, dets, thresh):
@@ -57,7 +57,7 @@ def vis_detections(im, title, dets, thresh):
 		if score > thresh:
 			cv2.rectangle(im, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2)
 
-		
+
 	cv2.imshow(title, im)
 	cv2.waitKey(0)
 
@@ -107,7 +107,7 @@ def im_detect_sliding_crop(net, im, crop_h, crop_w, step):
 			continue
 
 		x1 = 0
-		while x1 < imw:			
+		while x1 < imw:
 			x2 = min(x1 + crop_w, imw)
 			if x2 - x1 < 25:
 				x1 += step
@@ -209,6 +209,8 @@ if __name__ == '__main__':
 
 	nfold = len(imdb)
 	for i in xrange(nfold):
+		print("\n\n")
+		print("#nfold: ", i)
 		image_names = imdb[i]
 
 		# detection file
@@ -219,54 +221,59 @@ if __name__ == '__main__':
 		for idx, im_name in enumerate(image_names):
 			# timer = Timer()
 			# timer.tic()
+			print("\n\n")
+			print("idx: ", idx, "    im_name: ", im_name)
 
 			# Load the demo image
 			mat_name = im_name[:-4] + '.mat'
 
 			rot_box_filename = 'map_res/rot_box_'+im_name.split("/")[-1]+'_'+str(i+1)+'.pkl'
+			print("rot_box_filename: ", rot_box_filename)
 			rot_file = open(rot_box_filename,"wb")
 			# print os.path.join(work_dir, mat_name)
 
-			print os.path.join(data_dir, im_name)
+			print("Reading Image: ", os.path.join(data_dir, im_name))
 
 			im = cv2.imread(os.path.join(data_dir, im_name))
 			#print os.path.join(data_dir, im_name)
 			#im, translation = adjust_image_size(im, padding_amount=500)
 			translation = (0, 0)
 			#print(im.shape)
-			
+
 			all_boxes, all_scores, all_rotations = [], [], []
 			for angle in range(0, 95, 10):
+				print("--------------------------------------------------")
 				#print("Running detection at angle: " + str(angle))
 				image_center = tuple(np.array((im.shape[0],im.shape[1]))/2)
 				R = cv2.getRotationMatrix2D(image_center, angle, scale=1.0)
 				#rot_img = cv2.warpAffine(im, R, (im.shape[0], im.shape[1]), flags=cv2.INTER_LINEAR)
-				rot_img, rot_mat, bounds = rotate_image(im, angle, im.shape)				
-				
+				rot_img, rot_mat, bounds = rotate_image(im, angle, im.shape)
+
 				# # Detect all object classes and regress object bounds
 				timer = Timer()
 				timer.tic()
 				# scores, boxes = im_detect(net, im)
 				scores, boxes = im_detect_sliding_crop(net, rot_img, crop_h, crop_w, step)
-				
-				print(np.max(scores))
-				print("Boxes for angle " + str(angle) + ": " + str(boxes.shape[0]))				    
+
+				print("Max-Score: ", np.max(scores))
+				print("Boxes for angle " + str(angle) + ": " + str(boxes.shape[0]))
 				Rinv = cv2.getRotationMatrix2D(image_center, -angle, scale=1.0)
 
 				all_boxes.append(boxes)
 				all_scores.append(scores)
-				all_rotations.append( {'angle':angle, 'center':image_center, 'R':R, 'Rinv': Rinv} ) 
-				    
+				all_rotations.append( {'angle':angle, 'center':image_center, 'R':R, 'Rinv': Rinv} )
+
 				timer.toc()
 				print ('Detection took {:.3f}s for ''{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
-			pickle.dump([all_boxes, all_scores, all_rotations],rot_file)
+			pickle.dump([all_boxes, all_scores, all_rotations], rot_file)
 
 			dir_name, mat_name = os.path.split(im_name)
 			if not os.path.exists(os.path.join(work_dir, dir_name)):
-					os.makedirs(os.path.join(work_dir, dir_name))
-			
-			print(im_name)
+				print("Creting directory: ", os.path.join(work_dir, dir_name))
+				os.makedirs(os.path.join(work_dir, dir_name))
+
+			print("im_name: ", im_name)
 			fid.write(im_name + "\n")
 			#import pdb; pdb.set_trace()
 			for k in range(len(all_boxes)):
@@ -285,7 +292,7 @@ if __name__ == '__main__':
 				np.save('dets_before_NMS.npy', dets)
 				keep = nms(dets, NMS_THRESH, force_cpu=False)
 				#import pdb; pdb.set_trace()
-	
+
 				dets = dets[keep, :]
 				# save dets for checks
 				np.save('dets_after_NMS.npy', dets)
@@ -314,8 +321,5 @@ if __name__ == '__main__':
 				sys.stdout.write('%.3f ' % ((idx + 1) / len(image_names) * 100))
 				sys.stdout.flush()
 
-		print ''
+		print 'Done!!!!'
 		fid.close()
-
-			
-
