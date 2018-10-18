@@ -54,13 +54,13 @@ def vis_detections(im, title, dets, thresh):
 	cv2.waitKey(0)
 
 def save_detections(im, im_name, dets, thresh):
+	print("save_detections()::::", im_name)
 	for i in xrange(dets.shape[0]):
 		bbox = dets[i, :4]
 		score = dets[i, -1]
 		if score > thresh:
 			cv2.rectangle(im, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 4)
 	cv2.imwrite(im_name, im)
-	print("save_detections()::::", im_name)
 
 #def rotate_image(mat, angle):
 #    height, width = mat.shape[:2]
@@ -274,11 +274,13 @@ if __name__ == '__main__':
 				rot = all_rotations[k]
 				angle = rot['angle']
 
+				print("Writing angle to file")
 				fid.write("angle " + str(angle) + "\n")
 				#print("Boxes: " + str(len(boxes)))
 				res = {'boxes': boxes, 'scores': scores}
 				sio.savemat(os.path.join(work_dir, mat_name), res)
-
+				print("Saving {boxes, scores} dictionary")
+				
 				dets = np.hstack((boxes,scores)).astype(np.float32)
 				keep = nms(dets, NMS_THRESH)
 				dets = dets[keep, :]
@@ -297,6 +299,7 @@ if __name__ == '__main__':
 				#        '{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
 				fid.write(str(dets.shape[0]) + '\n')
+				print("Wrote detections")
 				for j in xrange(dets.shape[0]):
 					fid.write('%f %f %f %f %f\n' % (dets[j, 0], dets[j, 1], dets[j, 2], dets[j, 3], dets[j, 4]))
 
