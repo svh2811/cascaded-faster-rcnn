@@ -60,6 +60,7 @@ def save_detections(im, im_name, dets, thresh):
 		if score > thresh:
 			cv2.rectangle(im, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 4)
 	cv2.imwrite(im_name, im)
+	print("save_detections()::::", im_name)
 
 #def rotate_image(mat, angle):
 #    height, width = mat.shape[:2]
@@ -167,7 +168,7 @@ if __name__ == '__main__':
 
 	#data_dir = '/media/ray/maps_project/mapOutput_3/'
 	data_dir = '/home/supadhyay/supadhyay/cascaded-faster-rcnn/character-faster-rcnn/DataGeneration/maps_red'
-	work_dir = '/home/supadhyay/supadhyay/cascaded-faster-rcnn/character-faster-rcnn/DataGeneration/maps_red/detections/'
+	work_dir = '/home/supadhyay/supadhyay/cascaded-faster-rcnn/character-faster-rcnn/DataGeneration/detections/'
 	force_new = False
 
 	CONF_THRESH = 0.95
@@ -193,7 +194,8 @@ if __name__ == '__main__':
 	for i in xrange(nfold):
 		image_names = imdb[i]
 
-		print("\n\nimage_names: ", image_names)
+		print("\n\n")
+		print("image_names: ", image_names)
 
 		# detection file
 		dets_file_name = 'map_res/words-det-fold-%02d.txt' % (i + 1)
@@ -206,6 +208,8 @@ if __name__ == '__main__':
 
 			# Load the demo image
 			mat_name = im_name[:-4] + '.mat'
+			
+			print("\n\n")
 			print("mat_name: ", mat_name)
 
 			rot_box_filename = 'map_res/rot_box_'+im_name.split("/")[-1]+'_'+str(i+1)+'.pkl'
@@ -235,7 +239,7 @@ if __name__ == '__main__':
 				# scores, boxes = im_detect(net, im)
 				scores, boxes = im_detect_sliding_crop(net, rot_img, crop_h, crop_w, step)
 				
-				print(np.max(scores))
+				print("Max Score: ", np.max(scores))
 				print("Boxes for angle " + str(angle) + ": " + str(boxes.shape[0]))				    
 				Rinv = cv2.getRotationMatrix2D(image_center, -angle, scale=1.0)
 
@@ -256,10 +260,15 @@ if __name__ == '__main__':
 			print("\n\n")
 
 			if not os.path.exists(os.path.join(work_dir, dir_name)):
+				print("Directory created")
 				os.makedirs(os.path.join(work_dir, dir_name))
 			
 			fid.write(im_name + "\n")
+			print("File " + im_name + " written!")
+
 			for k in range(len(all_boxes)):
+				print("\n\n")
+				print("Iterating for k: ", k)
 				boxes = all_boxes[k]
 				scores = all_scores[k]
 				rot = all_rotations[k]
