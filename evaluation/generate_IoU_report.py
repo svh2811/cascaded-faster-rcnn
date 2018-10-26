@@ -22,6 +22,14 @@ parser.add_option("-r", "--results", help="file with prediction results")
 
 (options, args) = parser.parse_args()
 
+def find_rect(preds):
+    bx,by = preds[0],preds[1]
+    w = preds[2]
+    h  = preds[3]
+    #return [bx,by-h,bx+w,by-h,bx+w,by,bx,by]
+    return [bx-h,by+w,bx,by+w,bx,by,bx-h,by]
+
+
 annotation_file = options.testfile
 prediction_file = options.results
 
@@ -52,8 +60,9 @@ for key in predicted_regions.keys():
         for j in range(len(annotations)):
             p = predictions[i]
             a = annotations[j]
-            intersection = compute_intersection(annotations[j], predictions[i])
-            union = compute_union(annotations[j], predictions[i])
+            row_r = find_rect(predictions[i])
+            intersection = compute_intersection(find_rect(annotations[j]), row_r)
+            union = compute_union(find_rect(annotations[j]),row_r,intersection)
             C[i,j] = (1.0 / ((intersection / union) + 1e-3))
 
     #Give the option of no assignment, which is a bit better than the worst possible assignment
@@ -68,8 +77,9 @@ for key in predicted_regions.keys():
         row = rows[idx]
         col = columns[idx]
         if col < len(annotations):
-            intersection = compute_intersection(predictions[row], annotations[col])
-            union = compute_union(predictions[row], annotations[col])
+            row_r = find_rect(predictions[row])
+            intersection = compute_intersection(row_r, find_rect(annotations[col]))
+            union = compute_union(row_r, find_rect(annotations[col]),intersection)
 
             iou = intersection / union
             avg_iou += iou

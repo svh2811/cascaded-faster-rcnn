@@ -1,0 +1,35 @@
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+        . /etc/bashrc
+fi
+
+# Uncomment the following line if you don't like systemctl's auto-paging feature:
+# export SYSTEMD_PAGER=
+
+# User specific aliases and functions
+module load slurm cudnn/6.0
+
+#module load cuda80/toolkit
+module load openmpi/gcc
+module load hdf5
+module load fftw2
+module load
+#module load python2/current
+#module load python3/current
+module load caffe
+#module load tensorflow
+
+export CUDA_HOME=$CUDA_PATH
+
+
+# added by Miniconda2 4.3.21 installer
+#export PATH="/home/ray/miniconda2/bin:$PATH"
+
+#module unload cuda80/toolkit/8.0.44
+module load cuda75/toolkit/7.5.18
+module load hdf5_18/1.8.17
+module load openblas/dynamic/0.2.18
+module load python/2.7.13-1
+module load cudnn/5.1

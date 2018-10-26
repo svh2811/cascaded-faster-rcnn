@@ -88,6 +88,7 @@ for key in merged_predictions.keys():
 
         original_image = "./vis_images/"+key
 	print original_image
+	print('reading image',original_image)
         img = cv2.imread(original_image)
 
         predictions = merged_predictions[key]
