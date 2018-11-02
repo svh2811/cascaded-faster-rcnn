@@ -352,13 +352,11 @@ if __name__ == '__main__':
 					# if selective_search:
 					# 	for points in undetected['e']:
 					# 		if boxes[]
-					NMS_THRESH = config.NMS_THRESH
 					keep = nms(dets, NMS_THRESH, force_cpu=False)
 					#import pdb; pdb.set_trace()
 
 					dets = dets[keep, :]
 					# save dets for checks
-					CONF_THRESH = config.CONF_THRESH
 					np.save('dets2_after_NMS.npy', dets)
 					keep = np.where(dets[:, 4] > CONF_THRESH)
 					dets = dets[keep]
