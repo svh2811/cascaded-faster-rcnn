@@ -40,8 +40,8 @@ for nms_thresh in config.NMS_THRESH_LIST:
         merged_predictions = predicted
         merged = True
 
-        if os.path.isdir(base_directory + "/evaluation/vis_images_" + hyper_params) == False:
-            os.mkdir(base_directory+"/evaluation/vis_images_" + hyper_params)
+        if os.path.isdir(base_directory + "/evaluation/vis_images/" + hyper_params) == False:
+            os.mkdir(base_directory + "/evaluation/vis_images/" + hyper_params)
 
         for key in merged_predictions.keys():
             #if key in annotated.keys():
@@ -68,7 +68,7 @@ for nms_thresh in config.NMS_THRESH_LIST:
              #       else:
              #           annotation_by_angle[a[4]].append( a[:4] )
 
-                img_directory = base_directory + "/evaluation/vis_images_" + hyper_params
+                img_directory = base_directory + "/evaluation/vis_images/" + hyper_params
 
                 if os.path.isdir(img_directory) == False:
                     os.mkdir(img_directory)
