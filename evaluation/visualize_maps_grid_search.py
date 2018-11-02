@@ -28,7 +28,7 @@ for nms_thresh in config.NMS_THRESH_LIST:
     for conf_tresh in config.CONF_THRESH_LIST:
         hyper_params = str(nms_thresh) + "_" + str(conf_tresh)
         print(hyper_params)
-        prediction_file =  prediction_folder + "/words-det2-" + hyper_params + "_" +  config.FID_EXTENSION + "-D0090-5242001-01.txt"
+        prediction_file =  prediction_folder + "words-det2-" + hyper_params + "_" +  config.FID_EXTENSION + "-D0090-5242001-01.txt"
         print(prediction_file)
 
         predicted = retrieve_regions(prediction_file)
