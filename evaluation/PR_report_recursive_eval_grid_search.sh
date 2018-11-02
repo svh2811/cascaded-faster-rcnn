@@ -4,7 +4,6 @@ for i in $(seq 1);
 do
 	echo ${i}
 	rm ./vis_images/*
-	rm -r ./vis_images_*
 	cp -v ../character-faster-rcnn/DataGeneration/maps_red/* ./vis_images/
 	python ./visualize_maps_grid_search.py -r ../character-faster-rcnn/map_res/ -t ../character-faster-rcnn/DataGeneration/test_d.txt
   #python ./generate_IoU_report.py -r ../character-faster-rcnn/map_res/words-det-fold-01.txt -t ../character-faster-rcnn/DataGeneration/test.txt
