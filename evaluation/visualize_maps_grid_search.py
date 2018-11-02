@@ -47,8 +47,7 @@ for nms_thresh in config.NMS_THRESH_LIST:
             #if key in annotated.keys():
             print("\nCreating image for:  " + key)
             original_image = "./vis_images/" + key
-
-        	print('reading image: ', original_image)
+            print('reading image: ', original_image)
             img = cv2.imread(original_image)
             predictions = merged_predictions[key]
             prediction_by_angle = {}
