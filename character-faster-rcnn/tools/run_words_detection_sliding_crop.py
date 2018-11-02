@@ -215,9 +215,6 @@ if __name__ == '__main__':
 	work_dir = './detections/'
 	force_new = False
 
-	#CONF_THRESH = 0.9
-	#NMS_THRESH = 0.1
-
 	'''
 	crop_w = 300
 	crop_h = 300
@@ -407,6 +404,11 @@ if __name__ == '__main__':
 							# if selective_search:
 							# 	for points in undetected['e']:
 							# 		if boxes[]
+
+							# Original values	
+							CONF_THRESH = 0.9
+							NMS_THRESH = 0.1
+
 							keep = nms(dets, NMS_THRESH, force_cpu=False)
 							#import pdb; pdb.set_trace()
 
