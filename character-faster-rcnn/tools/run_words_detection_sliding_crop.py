@@ -347,7 +347,7 @@ if __name__ == '__main__':
 
 							dets = np.hstack((boxes2,scores2)).astype(np.float32)
 							# save dets for checks
-							np.save(hyper_params + "_" + 'dets2_before_NMS.npy', dets)
+							#np.save(hyper_params + "_" + 'dets2_before_NMS.npy', dets)
 							if config.DEBUG:
 								print('boxes',boxes2.shape,np.min(boxes2[:,0]),np.max(boxes2[:,0]),np.min(boxes2[:,2]),np.max(boxes2[:,2]))
 								print('scores',scores2.shape,np.min(scores2),np.max(scores2))
@@ -359,11 +359,11 @@ if __name__ == '__main__':
 
 							dets = dets[keep, :]
 							# save dets for checks
-							np.save(hyper_params + "_" + 'dets2_after_NMS.npy', dets)
+							#np.save(hyper_params + "_" + 'dets2_after_NMS.npy', dets)
 							keep = np.where(dets[:, 4] > CONF_THRESH)
 							dets = dets[keep]
 							# save dets for checks
-							np.save(hyper_params + "_" + 'dets2_after_CONF.npy', dets)
+							#np.save(hyper_params + "_" + 'dets2_after_CONF.npy', dets)
 							#print("Detections: " + str(dets.shape))
 							#save_detections(im, im_name, dets, CONF_THRESH)
 
@@ -405,7 +405,7 @@ if __name__ == '__main__':
 							# 	for points in undetected['e']:
 							# 		if boxes[]
 
-							# Original values	
+							# Original values
 							CONF_THRESH = 0.9
 							NMS_THRESH = 0.1
 
