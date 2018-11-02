@@ -27,6 +27,7 @@ import config
 for nms_thresh in config.NMS_THRESH_LIST:
     for conf_tresh in config.CONF_THRESH_LIST:
         hyper_params = str(nms_thresh) + "_" + str(conf_tresh)
+        print("\n\n")
         print(hyper_params)
         prediction_file =  prediction_folder + "words-det-" + hyper_params + "_" +  config.FID_EXTENSION + "-D0090-5242001-01.txt"
         print(prediction_file)
@@ -39,68 +40,68 @@ for nms_thresh in config.NMS_THRESH_LIST:
         merged_predictions = predicted
         merged = True
 
-exit()
+        if os.path.isdir(base_directory + "/evaluation/vis_images_" + hyper_params) == False:
+            os.mkdir(base_directory+"/evaluation/vis_images_" + hyper_params)
 
-if os.path.isdir(base_directory+"/evaluation/vis_images") == False:
-    os.mkdir(base_directory+"/evaluation/vis_images/")
+        for key in merged_predictions.keys():
+            #if key in annotated.keys():
+                print("\nCreating image for:  " + key)
+                original_image = "./vis_images/" + key
 
-for key in merged_predictions.keys():
-    #if key in annotated.keys():
-        print("\nCreating image for:  " + key)
+        	print original_image
 
-        original_image = "./vis_images/"+key
-	print original_image
-	print('reading image',original_image)
-        img = cv2.imread(original_image)
+            print('reading image', original_image)
+                img = cv2.imread(original_image)
+                predictions = merged_predictions[key]
+                prediction_by_angle = {}
+                annotation_by_angle = {}
+                for p in predictions:
+                    if p[5] not in prediction_by_angle:
+                        prediction_by_angle[p[5]] = [p[:5]]
+                    else:
+                        prediction_by_angle[p[5]].append( p[:5] )
 
-        predictions = merged_predictions[key]
-        prediction_by_angle = {}
-        annotation_by_angle = {}
-        for p in predictions:
-            if p[5] not in prediction_by_angle:
-                prediction_by_angle[p[5]] = [p[:5]]
-            else:
-                prediction_by_angle[p[5]].append( p[:5] )
+             #   annotations = annotated[key]
+             #  for a in annotations:
+             #       if a[4] not in annotation_by_angle:
+             #           annotation_by_angle[a[4]] = [a[:4]]
+             #       else:
+             #           annotation_by_angle[a[4]].append( a[:4] )
 
-     #   annotations = annotated[key]
-     #  for a in annotations:
-     #       if a[4] not in annotation_by_angle:
-     #           annotation_by_angle[a[4]] = [a[:4]]
-     #       else:
-     #           annotation_by_angle[a[4]].append( a[:4] )
+                img_directory = base_directory + "/evaluation/vis_images_" + hyper_params
 
-        img_directory = base_directory+"/evaluation/vis_images"
-
-        if os.path.isdir(img_directory) == False:
-            os.mkdir(img_directory)
+                if os.path.isdir(img_directory) == False:
+                    os.mkdir(img_directory)
 
 
-        #padding_amount = 500
-        #img, translate = adjust_image_size(img, padding_amount)
-	translate = (0,0)
-        img_shape = img.shape
-        pivot = (img_shape[1] // 2, img_shape[0] // 2)
+                #padding_amount = 500
+                #img, translate = adjust_image_size(img, padding_amount)
+        	translate = (0,0)
+                img_shape = img.shape
+                pivot = (img_shape[1] // 2, img_shape[0] // 2)
 
-        all_predictions = []
-        all_annotations = []
-        for angle in prediction_by_angle:
-            for pred in prediction_by_angle[angle]:
-                corners = convert_bbox_format(pred, -angle, pivot=pivot)
-                all_predictions.append( corners )
+                all_predictions = []
+                all_annotations = []
+                for angle in prediction_by_angle:
+                    for pred in prediction_by_angle[angle]:
+                        corners = convert_bbox_format(pred, -angle, pivot=pivot)
+                        all_predictions.append( corners )
 
-        #print all_predictions
+                #print all_predictions
 
-        filtered_predictions = all_predictions
-        #filtered_predictions = filter_predictions(all_predictions)
+                filtered_predictions = all_predictions
+                #filtered_predictions = filter_predictions(all_predictions)
 
-      #  for angle in annotation_by_angle:
-      #      for annotation in annotation_by_angle[angle]:
-      #          corners = convert_bbox_format(annotation, -angle, pivot=pivot)
-      #          all_annotations.append( corners )
+              #  for angle in annotation_by_angle:
+              #      for annotation in annotation_by_angle[angle]:
+              #          corners = convert_bbox_format(annotation, -angle, pivot=pivot)
+              #          all_annotations.append( corners )
 
 
+                # thresholding on the basis of class confidence
+                image, cnt = vis_detections_pts(img, predictions=filtered_predictions, threshold=conf_tresh, annotations=all_annotations)
+                cv2.imwrite(img_directory + "/" + key, image)
+                #print cnt
+                np.save(img_directory + "/" + key + '.npy', cnt)
 
-        image, cnt = vis_detections_pts(img, predictions=filtered_predictions, threshold=0.6, annotations=all_annotations)
-        cv2.imwrite(img_directory+"/"+key, image)
-        #print cnt
-        np.save(img_directory+"/"+key+'.npy', cnt)
+print("Done!!!!!!!")
