@@ -248,8 +248,8 @@ if __name__ == '__main__':
 				image_names = imdb[i]
 
 				# detection file
-				dets_file_name = 'map_res/words-det-D0090-5242001-%02d.txt' % (i + 1)
-				dets_file_name2 = 'map_res/words-det-' + hyper_params + "_" + config.FID_EXTENSION + '-D0090-5242001-%02d.txt' % (i + 1)
+				dets_file_name = 'map_res/words-det-D0090-5242001-%02d-%c.txt' % (i + 1,config.CHARACTER)
+				dets_file_name2 = 'map_res/words-det-' + hyper_params + "_" + config.FID_EXTENSION + '-D0090-5242001-%02d-%c.txt' % (i + 1,config.CHARACTER)
 				fid = open(dets_file_name, 'w')
 				fid2 = open(dets_file_name2, 'w')
 				sys.stdout.write('%s ' % (i + 1))
