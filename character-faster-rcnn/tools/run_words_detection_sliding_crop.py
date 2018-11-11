@@ -33,26 +33,38 @@ def get_imdb_map(data_dir):
 	#image_names = ['images/D0042-1070010.tiff', 'images/D0042-1070005.tiff']
 	#image_names = ['letmap00001.jpg', 'letmap00045.jpg', 'letmap00069.jpg', 'letmap00134.jpg']
 
-	image_names = ['D0090-5242001.tiff']
+	#image_names = ['D0090-5242001.tiff']
 	#image_names = ['D0041-5370006.tiff']
 	#image_names = ['D0079-0019007.tiff']
 	#image_names = ['D0117-5755036.tiff']
 	#image_names = ['D5005-5028100.tiff']
 	#image_names = ['D0006-0285025_0_36.tiff']
-	'''
+	
 	image_names = []
 	test_file_lines = open("./DataGeneration/"+"test.txt", "r").readlines()
 	for line in test_file_lines:
         	if line.endswith('.tiff\n'):
-			h,s,t = line.partition('/')
+				h,s,t = line.partition('/')
 		        h,s,t = t.partition('.')
-                	h,s,t = h.partition('_')
-                	image_names.append(h+'.tiff')
+                h,s,t = h.partition('_')
+                image_names.append(h+'.tiff')
 	#print image_names
-	'''
+	
+	test_file_lines = open("./DataGeneration/" + "train.txt", "r").readlines()
+	for line in test_file_lines:
+        	if line.endswith('.tiff\n'):
+        		x = line.rfind("/")
+        		line = line[x + 1 :]
+        		x = line.lfind("_")
+        		line = line[: x]
+                image_names.append(line + '.tiff')
 
 	imdb.append(image_names)
-	print("Number of images: ", len(imdb))
+	print("Number of images groups: ", len(imdb))
+	
+	for i, images in enumerate(imdb):
+		print("Images in Bucket " + i + ": " + len(images))
+
 	return imdb
 
 def vis_detections(im, title, dets, thresh):
@@ -249,9 +261,12 @@ if __name__ == '__main__':
 
 				# detection file
 				dets_file_name = 'map_res/words-det-D0090-5242001-%02d-%c.txt' % (i + 1,config.CHARACTER)
-				dets_file_name2 = 'map_res/words-det-' + hyper_params + "_" + config.FID_EXTENSION + '-D0090-5242001-%02d-%c.txt' % (i + 1,config.CHARACTER)
 				fid = open(dets_file_name, 'w')
-				fid2 = open(dets_file_name2, 'w')
+				
+				if selective_search:
+					dets_file_name2 = 'map_res/words-det-' + hyper_params + "_" + config.FID_EXTENSION + '-D0090-5242001-%02d-%c.txt' % (i + 1,config.CHARACTER)
+					fid2 = open(dets_file_name2, 'w')
+				
 				sys.stdout.write('%s ' % (i + 1))
 
 				for idx, im_name in enumerate(image_names):
@@ -264,9 +279,14 @@ if __name__ == '__main__':
 					mat_name = im_name[:-4] + '.mat'
 
 					rot_box_filename = 'map_res/rot_box_'+im_name.split("/")[-1]+'_'+str(i+1)+'.pkl'
-					rot_box_filename2 = 'map_res/rot_box2_' + hyper_params + "_" + im_name.split("/")[-1]+'_'+str(i+1)+'.pkl'
+					
+					if selective_search:
+						rot_box_filename2 = 'map_res/rot_box2_' + hyper_params + "_" + im_name.split("/")[-1]+'_'+str(i+1)+'.pkl'
+					
 					print("rot_box_filename: ", rot_box_filename)
+					
 					rot_file = open(rot_box_filename,"wb")
+					
 					if selective_search:
 						rot_file2 = open(rot_box_filename2, "wb")
 					# print os.path.join(work_dir, mat_name)
