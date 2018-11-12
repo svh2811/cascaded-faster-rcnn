@@ -17,7 +17,7 @@ FID_EXTENSION = '2'
 UNDETECTED = 'dict.npy'
 
 #NMS threshold to change affected regions
-NMS_THRESH_LIST = [0.1, 0.4]
+NMS_THRESH_LIST = [0.1]
 
 #CONF threshold to change affected regions
-CONF_THRESH_LIST = [0.9, 0.6]
+CONF_THRESH_LIST = [0.9]
