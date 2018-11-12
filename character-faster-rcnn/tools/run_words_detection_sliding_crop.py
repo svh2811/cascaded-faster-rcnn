@@ -200,6 +200,8 @@ def parse_args():
 	parser.add_argument('--net', dest='demo_net', help='Network to use [vgg16]',
 						choices=NETS.keys(), default='vgg16')
 
+	parser.add_argument('--char', dest='char_model', help='char to test', default='e')
+
 	args = parser.parse_args()
 
 	return args
@@ -214,277 +216,277 @@ if __name__ == '__main__':
 	chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 	#chars = ['0', '1']
 
-	for char in chars:
+	NETS = {'vgg16': ('VGG16','/mnt/nfs/work1/elm/ray/trained_models/vgg16_faster_rcnn_map_iter_' + char + '_16159.caffemodel')}
 
-		print("\n\n")
-		print("*******************************" + char + "*************************************")
+	args = parse_args()
 
-		NETS = {'vgg16': ('VGG16','/mnt/nfs/work1/elm/ray/trained_models/vgg16_faster_rcnn_map_iter_' + char + '_16159.caffemodel')}
+	char = args.char_model
+	
+	print("\n\n")
+	print("*******************************" + char + "*************************************")
 
-		args = parse_args()
+	prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
+							'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
+	caffemodel = os.path.join(cfg.DATA_DIR, 'faster_rcnn_models',
+							  NETS[args.demo_net][1])
 
-		prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
-								'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
-		caffemodel = os.path.join(cfg.DATA_DIR, 'faster_rcnn_models',
-								  NETS[args.demo_net][1])
+	prototxt = 'models/map/VGG16/faster_rcnn_end2end/test.prototxt'
+	caffemodel = NETS[args.demo_net][1]
 
-		prototxt = 'models/map/VGG16/faster_rcnn_end2end/test.prototxt'
-		caffemodel = NETS[args.demo_net][1]
+	if not os.path.isfile(caffemodel):
+		raise IOError(('{:s} not found.\nDid you run ./data/script/'
+					   'fetch_faster_rcnn_models.sh?').format(caffemodel))
 
-		if not os.path.isfile(caffemodel):
-			raise IOError(('{:s} not found.\nDid you run ./data/script/'
-						   'fetch_faster_rcnn_models.sh?').format(caffemodel))
+	if args.cpu_mode:
+		caffe.set_mode_cpu()
+	else:
+		caffe.set_mode_gpu()
+		caffe.set_device(args.gpu_id)
+		cfg.GPU_ID = args.gpu_id
+	net = caffe.Net(prototxt, caffemodel, caffe.TEST)
 
-		if args.cpu_mode:
-			caffe.set_mode_cpu()
-		else:
-			caffe.set_mode_gpu()
-			caffe.set_device(args.gpu_id)
-			cfg.GPU_ID = args.gpu_id
-		net = caffe.Net(prototxt, caffemodel, caffe.TEST)
+	print '\n\nLoaded network {:s}'.format(caffemodel)
 
-		print '\n\nLoaded network {:s}'.format(caffemodel)
+	#data_dir = '/media/ray/maps_project/mapOutput_3/'
+	#data_dir = '/media/ray/maps_project/faster-rcnn/'
+	#work_dir = '/media/ray/maps_project/faster-rcnn/detections/'
+	data_dir = './DataGeneration/maps_red/'
+	#data_dir = './'
+	work_dir = './detections/'
+	force_new = False
 
-		#data_dir = '/media/ray/maps_project/mapOutput_3/'
-		#data_dir = '/media/ray/maps_project/faster-rcnn/'
-		#work_dir = '/media/ray/maps_project/faster-rcnn/detections/'
-		data_dir = './DataGeneration/maps_red/'
-		#data_dir = './'
-		work_dir = './detections/'
-		force_new = False
+	'''
+	crop_w = 300
+	crop_h = 300
+	step = 100
+	'''
 
-		'''
-		crop_w = 300
-		crop_h = 300
-		step = 100
-		'''
+	crop_w = 500
+	crop_h = 500
+	step = 400
+	#'''
+	imdb = get_imdb_map(data_dir)
 
-		crop_w = 500
-		crop_h = 500
-		step = 400
-		#'''
-		imdb = get_imdb_map(data_dir)
+	# Warmup on a dummy image
+	im = 128 * np.ones((300, 300, 3), dtype=np.uint8)
+	for i in xrange(2):
+		_, _= im_detect(net, im)
 
-		# Warmup on a dummy image
-		im = 128 * np.ones((300, 300, 3), dtype=np.uint8)
-		for i in xrange(2):
-			_, _= im_detect(net, im)
+	nfold = len(imdb)
 
-		nfold = len(imdb)
+	for nms_thresh in config.NMS_THRESH_LIST:
+		for conf_tresh in config.CONF_THRESH_LIST:
+			CONF_THRESH = conf_tresh
+			NMS_THRESH = nms_thresh
 
-		for nms_thresh in config.NMS_THRESH_LIST:
-			for conf_tresh in config.CONF_THRESH_LIST:
-				CONF_THRESH = conf_tresh
-				NMS_THRESH = nms_thresh
+			hyper_params = str(nms_thresh) + "_" + str(conf_tresh)
+			#print(hyper_params)
 
-				hyper_params = str(nms_thresh) + "_" + str(conf_tresh)
-				#print(hyper_params)
+			for i in xrange(nfold):
+				#print("\n\n")
+				#print("#nfold: ", i)
+				image_names = imdb[i]
 
-				for i in xrange(nfold):
-					#print("\n\n")
-					#print("#nfold: ", i)
-					image_names = imdb[i]
+				# detection file
+				dets_file_name = 'map_res/words-det-D0090-5242001-%02d-%c.txt' % (i + 1, char)
+				fid = open(dets_file_name, 'w')
+				
+				if selective_search:
+					dets_file_name2 = 'map_res/words-det-' + hyper_params + "_" + config.FID_EXTENSION + '-D0090-5242001-%02d-%c.txt' % (i + 1, char)
+					fid2 = open(dets_file_name2, 'w')
+				
+				sys.stdout.write('%s ' % (i + 1))
 
-					# detection file
-					dets_file_name = 'map_res/words-det-D0090-5242001-%02d-%c.txt' % (i + 1, char)
-					fid = open(dets_file_name, 'w')
+				for idx, im_name in enumerate(image_names):
+					# timer = Timer()
+					# timer.tic()
+					print("\n\n")
+					print("idx: ", idx, "    im_name: ", im_name)
+
+					# Load the demo image
+					mat_name = im_name[:-4] + '.mat'
+
+					#rot_box_filename = 'map_res/rot_box_'+im_name.split("/")[-1]+'_'+str(i+1)+'.pkl'
 					
 					if selective_search:
-						dets_file_name2 = 'map_res/words-det-' + hyper_params + "_" + config.FID_EXTENSION + '-D0090-5242001-%02d-%c.txt' % (i + 1, char)
-						fid2 = open(dets_file_name2, 'w')
+						rot_box_filename2 = 'map_res/rot_box2_' + hyper_params + "_" + im_name.split("/")[-1]+'_'+str(i+1)+'.pkl'
 					
-					sys.stdout.write('%s ' % (i + 1))
+					#print("rot_box_filename: ", rot_box_filename)
+					
+					#rot_file = open(rot_box_filename,"wb")
+					
+					if selective_search:
+						rot_file2 = open(rot_box_filename2, "wb")
+					# print os.path.join(work_dir, mat_name)
 
-					for idx, im_name in enumerate(image_names):
-						# timer = Timer()
-						# timer.tic()
-						print("\n\n")
-						print("idx: ", idx, "    im_name: ", im_name)
+					print("Reading Image: ", os.path.join(data_dir, im_name))
 
-						# Load the demo image
-						mat_name = im_name[:-4] + '.mat'
+					im = cv2.imread(os.path.join(data_dir, im_name))
+					#print os.path.join(data_dir, im_name)
+					#im, translation = adjust_image_size(im, padding_amount=500)
+					translation = (0, 0)
+					#print(im.shape)
 
-						rot_box_filename = 'map_res/rot_box_'+im_name.split("/")[-1]+'_'+str(i+1)+'.pkl'
-						
+					all_boxes, all_scores, all_rotations = [], [], []
+					all_boxes2, all_scores2, all_rotations2 = [], [], []
+					for angle in range(0, 95, 10):
+						print("--------------------------------------------------")
+						#print("Running detection at angle: " + str(angle))
+						image_center = tuple(np.array((im.shape[0],im.shape[1]))/2)
+						R = cv2.getRotationMatrix2D(image_center, angle, scale=1.0)
+						#rot_img = cv2.warpAffine(im, R, (im.shape[0], im.shape[1]), flags=cv2.INTER_LINEAR)
+						rot_img, rot_mat, bounds = rotate_image(im, angle, im.shape)
+
+						# # Detect all object classes and regress object bounds
+						timer = Timer()
+						timer.tic()
+						# scores, boxes = im_detect(net, im)
 						if selective_search:
-							rot_box_filename2 = 'map_res/rot_box2_' + hyper_params + "_" + im_name.split("/")[-1]+'_'+str(i+1)+'.pkl'
-						
-						print("rot_box_filename: ", rot_box_filename)
-						
-						rot_file = open(rot_box_filename,"wb")
-						
+							scores, boxes, scores2, boxes2 = im_detect_sliding_crop(net, rot_img, crop_h, crop_w, step)
+						else:
+							scores, boxes = im_detect_sliding_crop(net, rot_img, crop_h, crop_w, step)
+
+						#print("Max-Score: ", np.max(scores))
+						#print("Boxes for angle " + str(angle) + ": " + str(boxes.shape[0]))
+						Rinv = cv2.getRotationMatrix2D(image_center, -angle, scale=1.0)
 						if selective_search:
-							rot_file2 = open(rot_box_filename2, "wb")
-						# print os.path.join(work_dir, mat_name)
-
-						print("Reading Image: ", os.path.join(data_dir, im_name))
-
-						im = cv2.imread(os.path.join(data_dir, im_name))
-						#print os.path.join(data_dir, im_name)
-						#im, translation = adjust_image_size(im, padding_amount=500)
-						translation = (0, 0)
-						#print(im.shape)
-
-						all_boxes, all_scores, all_rotations = [], [], []
-						all_boxes2, all_scores2, all_rotations2 = [], [], []
-						for angle in range(0, 95, 10):
-							print("--------------------------------------------------")
-							#print("Running detection at angle: " + str(angle))
-							image_center = tuple(np.array((im.shape[0],im.shape[1]))/2)
-							R = cv2.getRotationMatrix2D(image_center, angle, scale=1.0)
-							#rot_img = cv2.warpAffine(im, R, (im.shape[0], im.shape[1]), flags=cv2.INTER_LINEAR)
-							rot_img, rot_mat, bounds = rotate_image(im, angle, im.shape)
-
-							# # Detect all object classes and regress object bounds
-							timer = Timer()
-							timer.tic()
-							# scores, boxes = im_detect(net, im)
-							if selective_search:
-								scores, boxes, scores2, boxes2 = im_detect_sliding_crop(net, rot_img, crop_h, crop_w, step)
-							else:
-								scores, boxes = im_detect_sliding_crop(net, rot_img, crop_h, crop_w, step)
-
-							#print("Max-Score: ", np.max(scores))
-							#print("Boxes for angle " + str(angle) + ": " + str(boxes.shape[0]))
+							print("Max-Score2: ", np.max(scores2))
+							print("Boxes2 for angle " + str(angle) + ": " + str(boxes2.shape[0]))
 							Rinv = cv2.getRotationMatrix2D(image_center, -angle, scale=1.0)
-							if selective_search:
-								print("Max-Score2: ", np.max(scores2))
-								print("Boxes2 for angle " + str(angle) + ": " + str(boxes2.shape[0]))
-								Rinv = cv2.getRotationMatrix2D(image_center, -angle, scale=1.0)
 
-							if selective_search:
-								all_boxes2.append(boxes2)
-								all_scores2.append(scores2)
-								all_rotations2.append( {'angle':angle, 'center':image_center, 'R':R, 'Rinv': Rinv} )
-
-							all_boxes.append(boxes)
-							all_scores.append(scores)
-							all_rotations.append( {'angle':angle, 'center':image_center, 'R':R, 'Rinv': Rinv} )
-
-							timer.toc()
-							print ('Detection took {:.3f}s for ''{:d} object proposals').format(timer.total_time, boxes.shape[0])
-
-						#pickle.dump([all_boxes, all_scores, all_rotations], rot_file)
 						if selective_search:
-							pickle.dump([all_boxes2, all_scores2, all_rotations2], rot_file2)
+							all_boxes2.append(boxes2)
+							all_scores2.append(scores2)
+							all_rotations2.append( {'angle':angle, 'center':image_center, 'R':R, 'Rinv': Rinv} )
 
-						dir_name, mat_name = os.path.split(im_name)
-						if not os.path.exists(os.path.join(work_dir, dir_name)):
-							print("Creating directory: ", os.path.join(work_dir, dir_name))
-							os.makedirs(os.path.join(work_dir, dir_name))
+						all_boxes.append(boxes)
+						all_scores.append(scores)
+						all_rotations.append( {'angle':angle, 'center':image_center, 'R':R, 'Rinv': Rinv} )
 
-						#print("im_name: ", im_name)
-						if selective_search:
-							fid2.write(im_name + "\n")
-						else:
-							fid.write(im_name + "\n")
-						#import pdb; pdb.set_trace()
-						if selective_search:
-							for k in range(len(all_boxes2)):
-								boxes2 = all_boxes2[k]
-								scores = all_scores2[k]
-								rot = all_rotations2[k]
-								angle = rot['angle']
+						timer.toc()
+						print ('Detection took {:.3f}s for ''{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
-								fid2.write("angle " + str(angle) + "\n")
-								#print("Boxes: " + str(len(boxes)))
-								res = {'boxes': boxes2, 'scores': scores2}
-								sio.savemat(os.path.join(work_dir, mat_name), res)
+					#pickle.dump([all_boxes, all_scores, all_rotations], rot_file)
+					if selective_search:
+						pickle.dump([all_boxes2, all_scores2, all_rotations2], rot_file2)
 
-								dets = np.hstack((boxes2,scores2)).astype(np.float32)
-								# save dets for checks
-								#np.save(hyper_params + "_" + 'dets2_before_NMS.npy', dets)
-								if config.DEBUG:
-									print('boxes',boxes2.shape,np.min(boxes2[:,0]),np.max(boxes2[:,0]),np.min(boxes2[:,2]),np.max(boxes2[:,2]))
-									print('scores',scores2.shape,np.min(scores2),np.max(scores2))
-								# if selective_search:
-								# 	for points in undetected['e']:
-								# 		if boxes[]
-								keep = nms(dets, NMS_THRESH, force_cpu=False)
-								#import pdb; pdb.set_trace()
+					dir_name, mat_name = os.path.split(im_name)
+					if not os.path.exists(os.path.join(work_dir, dir_name)):
+						print("Creating directory: ", os.path.join(work_dir, dir_name))
+						os.makedirs(os.path.join(work_dir, dir_name))
 
-								dets = dets[keep, :]
-								# save dets for checks
-								#np.save(hyper_params + "_" + 'dets2_after_NMS.npy', dets)
-								keep = np.where(dets[:, 4] > CONF_THRESH)
-								dets = dets[keep]
-								# save dets for checks
-								#np.save(hyper_params + "_" + 'dets2_after_CONF.npy', dets)
-								#print("Detections: " + str(dets.shape))
-								#save_detections(im, im_name, dets, CONF_THRESH)
+					#print("im_name: ", im_name)
+					if selective_search:
+						fid2.write(im_name + "\n")
+					else:
+						fid.write(im_name + "\n")
+					#import pdb; pdb.set_trace()
+					if selective_search:
+						for k in range(len(all_boxes2)):
+							boxes2 = all_boxes2[k]
+							scores = all_scores2[k]
+							rot = all_rotations2[k]
+							angle = rot['angle']
 
-								dets[:, 2] = dets[:, 2] - dets[:, 0] + 1
-								#dets[:, 2] = -dets[:, 2] + dets[:, 0] - 1
-								dets[:, 3] = dets[:, 3] - dets[:, 1] + 1
-								#dets[:, 3] = -dets[:, 3] + dets[:, 1] - 1
+							fid2.write("angle " + str(angle) + "\n")
+							#print("Boxes: " + str(len(boxes)))
+							res = {'boxes': boxes2, 'scores': scores2}
+							sio.savemat(os.path.join(work_dir, mat_name), res)
 
-								# timer.toc()
-								# print ('Detection took {:.3f}s for '
-								#        '{:d} object proposals').format(timer.total_time, boxes.shape[0])
+							dets = np.hstack((boxes2,scores2)).astype(np.float32)
+							# save dets for checks
+							#np.save(hyper_params + "_" + 'dets2_before_NMS.npy', dets)
+							if config.DEBUG:
+								print('boxes',boxes2.shape,np.min(boxes2[:,0]),np.max(boxes2[:,0]),np.min(boxes2[:,2]),np.max(boxes2[:,2]))
+								print('scores',scores2.shape,np.min(scores2),np.max(scores2))
+							# if selective_search:
+							# 	for points in undetected['e']:
+							# 		if boxes[]
+							keep = nms(dets, NMS_THRESH, force_cpu=False)
+							#import pdb; pdb.set_trace()
 
-								fid2.write(str(dets.shape[0]) + '\n')
-								for j in xrange(dets.shape[0]):
-									fid2.write('%f %f %f %f %f\n' % (dets[j, 0], dets[j, 1], dets[j, 2], dets[j, 3], dets[j, 4]))
+							dets = dets[keep, :]
+							# save dets for checks
+							#np.save(hyper_params + "_" + 'dets2_after_NMS.npy', dets)
+							keep = np.where(dets[:, 4] > CONF_THRESH)
+							dets = dets[keep]
+							# save dets for checks
+							#np.save(hyper_params + "_" + 'dets2_after_CONF.npy', dets)
+							#print("Detections: " + str(dets.shape))
+							#save_detections(im, im_name, dets, CONF_THRESH)
 
+							dets[:, 2] = dets[:, 2] - dets[:, 0] + 1
+							#dets[:, 2] = -dets[:, 2] + dets[:, 0] - 1
+							dets[:, 3] = dets[:, 3] - dets[:, 1] + 1
+							#dets[:, 3] = -dets[:, 3] + dets[:, 1] - 1
 
-							if ((idx + 1) % 10) == 0:
-								sys.stdout.write('%.3f ' % ((idx + 1) / len(image_names) * 100))
-								sys.stdout.flush()
-						else:
-							for k in range(len(all_boxes)):
-								boxes = all_boxes[k]
-								scores = all_scores[k]
-								rot = all_rotations[k]
-								angle = rot['angle']
+							# timer.toc()
+							# print ('Detection took {:.3f}s for '
+							#        '{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
-								fid.write("angle " + str(angle) + "\n")
-								#print("Boxes: " + str(len(boxes)))
-								res = {'boxes': boxes, 'scores': scores}
-								sio.savemat(os.path.join(work_dir, mat_name), res)
-
-								dets = np.hstack((boxes,scores)).astype(np.float32)
-								# save dets for checks
-								#np.save('dets_before_NMS.npy', dets)
-								if config.DEBUG:
-									print('boxes',boxes.shape,np.min(boxes[:,0]),np.max(boxes[:,0]),np.min(boxes[:,2]),np.max(boxes[:,2]))
-								# if selective_search:
-								# 	for points in undetected['e']:
-								# 		if boxes[]
-
-								# Original values
-								CONF_THRESH = 0.9
-								NMS_THRESH = 0.1
-
-								keep = nms(dets, NMS_THRESH, force_cpu=False)
-								#import pdb; pdb.set_trace()
-
-								dets = dets[keep, :]
-								# save dets for checks
-								# np.save('dets_after_NMS.npy', dets)
-								keep = np.where(dets[:, 4] > CONF_THRESH)
-								dets = dets[keep]
-								# save dets for checks
-								# np.save('dets_after_CONF.npy', dets)
-								#print("Detections: " + str(dets.shape))
-								#save_detections(im, im_name, dets, CONF_THRESH)
-
-								dets[:, 2] = dets[:, 2] - dets[:, 0] + 1
-								#dets[:, 2] = -dets[:, 2] + dets[:, 0] - 1
-								dets[:, 3] = dets[:, 3] - dets[:, 1] + 1
-								#dets[:, 3] = -dets[:, 3] + dets[:, 1] - 1
-
-								# timer.toc()
-								# print ('Detection took {:.3f}s for '
-								#        '{:d} object proposals').format(timer.total_time, boxes.shape[0])
-
-								fid.write(str(dets.shape[0]) + '\n')
-								for j in xrange(dets.shape[0]):
-									fid.write('%f %f %f %f %f\n' % (dets[j, 0], dets[j, 1], dets[j, 2], dets[j, 3], dets[j, 4]))
+							fid2.write(str(dets.shape[0]) + '\n')
+							for j in xrange(dets.shape[0]):
+								fid2.write('%f %f %f %f %f\n' % (dets[j, 0], dets[j, 1], dets[j, 2], dets[j, 3], dets[j, 4]))
 
 
-							if ((idx + 1) % 10) == 0:
-								sys.stdout.write('%.3f ' % ((idx + 1) / len(image_names) * 100))
-								sys.stdout.flush()
+						if ((idx + 1) % 10) == 0:
+							sys.stdout.write('%.3f ' % ((idx + 1) / len(image_names) * 100))
+							sys.stdout.flush()
+					else:
+						for k in range(len(all_boxes)):
+							boxes = all_boxes[k]
+							scores = all_scores[k]
+							rot = all_rotations[k]
+							angle = rot['angle']
 
-			print 'Done!!!!'
-			fid.close()
+							fid.write("angle " + str(angle) + "\n")
+							#print("Boxes: " + str(len(boxes)))
+							res = {'boxes': boxes, 'scores': scores}
+							sio.savemat(os.path.join(work_dir, mat_name), res)
+
+							dets = np.hstack((boxes,scores)).astype(np.float32)
+							# save dets for checks
+							#np.save('dets_before_NMS.npy', dets)
+							if config.DEBUG:
+								print('boxes',boxes.shape,np.min(boxes[:,0]),np.max(boxes[:,0]),np.min(boxes[:,2]),np.max(boxes[:,2]))
+							# if selective_search:
+							# 	for points in undetected['e']:
+							# 		if boxes[]
+
+							# Original values
+							CONF_THRESH = 0.9
+							NMS_THRESH = 0.1
+
+							keep = nms(dets, NMS_THRESH, force_cpu=False)
+							#import pdb; pdb.set_trace()
+
+							dets = dets[keep, :]
+							# save dets for checks
+							# np.save('dets_after_NMS.npy', dets)
+							keep = np.where(dets[:, 4] > CONF_THRESH)
+							dets = dets[keep]
+							# save dets for checks
+							# np.save('dets_after_CONF.npy', dets)
+							#print("Detections: " + str(dets.shape))
+							#save_detections(im, im_name, dets, CONF_THRESH)
+
+							dets[:, 2] = dets[:, 2] - dets[:, 0] + 1
+							#dets[:, 2] = -dets[:, 2] + dets[:, 0] - 1
+							dets[:, 3] = dets[:, 3] - dets[:, 1] + 1
+							#dets[:, 3] = -dets[:, 3] + dets[:, 1] - 1
+
+							# timer.toc()
+							# print ('Detection took {:.3f}s for '
+							#        '{:d} object proposals').format(timer.total_time, boxes.shape[0])
+
+							fid.write(str(dets.shape[0]) + '\n')
+							for j in xrange(dets.shape[0]):
+								fid.write('%f %f %f %f %f\n' % (dets[j, 0], dets[j, 1], dets[j, 2], dets[j, 3], dets[j, 4]))
+
+
+						if ((idx + 1) % 10) == 0:
+							sys.stdout.write('%.3f ' % ((idx + 1) / len(image_names) * 100))
+							sys.stdout.flush()
+
+		print 'Done!!!!'
+		fid.close()
