@@ -7,7 +7,12 @@ from utils.timer import Timer
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
-import caffe, os, sys, cv2
+
+import os
+os.environ['GLOG_minloglevel'] = '3'
+#os.system('echo value $GLOG_minloglevel') 
+
+import caffe, sys, cv2
 import argparse
 import sys
 import pickle
@@ -17,13 +22,13 @@ import config
 sys.path.append("../evaluation/")
 from util import rotate_image, adjust_image_size
 
-global NETS
+#global NETS
 NETS = None
 
 #NETS = {'vgg16': ('VGG16','/media/ray/vgg16_faster_rcnn_map_iter_56159.caffemodel')}
 #NETS = {'vgg16': ('VGG16','../models/vgg16_faster_rcnn_map_iter_m_16159.caffemodel')}
-global undetected
-global selective_search
+#global undetected
+#global selective_search
 
 # phoc dictionary
 undetected = np.load(config.UNDETECTED)
@@ -359,7 +364,7 @@ if __name__ == '__main__':
 							timer.toc()
 							print ('Detection took {:.3f}s for ''{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
-						pickle.dump([all_boxes, all_scores, all_rotations], rot_file)
+						#pickle.dump([all_boxes, all_scores, all_rotations], rot_file)
 						if selective_search:
 							pickle.dump([all_boxes2, all_scores2, all_rotations2], rot_file2)
 
