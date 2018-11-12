@@ -44,27 +44,29 @@ def get_imdb_map(data_dir):
 	test_file_lines = open("./DataGeneration/"+"test.txt", "r").readlines()
 	for line in test_file_lines:
         	if line.endswith('.tiff\n'):
-				h,s,t = line.partition('/')
-		        h,s,t = t.partition('.')
-                h,s,t = h.partition('_')
-                image_names.append(h+'.tiff')
+			h,s,t = line.partition('/')
+			h,s,t = t.partition('.')
+			h,s,t = h.partition('_')
+			image_names.append(h+'.tiff')
 	#print image_names
 	
 	test_file_lines = open("./DataGeneration/" + "train.txt", "r").readlines()
+	train_images_set = set()
 	for line in test_file_lines:
         	if line.endswith('.tiff\n'):
-        		x = line.rfind("/")
-        		line = line[x + 1 :]
-        		x = line.lfind("_")
-        		line = line[: x]
-                image_names.append(line + '.tiff')
+			x = line.rfind("/")
+			line = line[x + 1 :]
+			x = line.find("_")
+			line = line[: x]
+			train_images_set.add(line + '.tiff')
+	image_names += list(train_images_set)
 
 	imdb.append(image_names)
-	print("Number of images groups: ", len(imdb))
+	print("Number of image groups: " + str(len(imdb)))
 	
 	for i, images in enumerate(imdb):
-		print("Images in Bucket " + i + ": " + len(images))
-
+		print("Images in Bucket " + str(i) + ": " + str(len(images)))
+	
 	return imdb
 
 def vis_detections(im, title, dets, thresh):
