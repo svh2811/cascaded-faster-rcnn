@@ -40,6 +40,7 @@ def get_imdb_map(data_dir):
 	#image_names = ['D5005-5028100.tiff']
 	#image_names = ['D0006-0285025_0_36.tiff']
 	
+	"""
 	image_names = []
 	test_file_lines = open("./DataGeneration/"+"test.txt", "r").readlines()
 	for line in test_file_lines:
@@ -60,6 +61,10 @@ def get_imdb_map(data_dir):
 			line = line[: x]
 			train_images_set.add(line + '.tiff')
 	image_names += list(train_images_set)
+	"""
+
+	# train files + val files
+	image_names = ['D0006-0285025.tiff', 'D0017-1592006.tiff', 'D0041-5370006.tiff', 'D0041-5370026.tiff', 'D0042-1070001.tiff', 'D0042-1070002.tiff', 'D0042-1070003.tiff', 'D0042-1070004.tiff', 'D0042-1070005.tiff', 'D0042-1070006.tiff', 'D0042-1070007.tiff', 'D0042-1070009.tiff', 'D0042-1070010.tiff', 'D0042-1070012.tiff', 'D0042-1070013.tiff', 'D0042-1070015.tiff', 'D0079-0019007.tiff', 'D0089-5235001.tiff', 'D0090-5242001.tiff', 'D0117-5755018.tiff', 'D0117-5755024.tiff', 'D0117-5755025.tiff', 'D0117-5755033.tiff']
 
 	imdb.append(image_names)
 	print("Number of image groups: " + str(len(imdb)))
