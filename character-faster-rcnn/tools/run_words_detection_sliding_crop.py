@@ -192,15 +192,15 @@ def parse_args():
 	global NETS
 	"""Parse input arguments."""
 	parser = argparse.ArgumentParser(description='Face Detection using Faster R-CNN')
+	parser.add_argument('--char', dest='char_id', default='e')	
+
 	parser.add_argument('--gpu', dest='gpu_id', help='GPU device id to use [0]',
 						default=0, type=int)
 	parser.add_argument('--cpu', dest='cpu_mode',
 						help='Use CPU mode (overrides --gpu)',
 						action='store_true')
 	parser.add_argument('--net', dest='demo_net', help='Network to use [vgg16]',
-						choices=NETS.keys(), default='vgg16')
-
-	parser.add_argument('--char', dest='char_model', help='char to test', default='e')
+				choices=NETS.keys(), default='vgg16')
 
 	args = parser.parse_args()
 
@@ -216,14 +216,16 @@ if __name__ == '__main__':
 	chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 	#chars = ['0', '1']
 
+	char = sys.argv[2]
+	
+	print("\n\n")
+	print("*******************************" + char + "*************************************")
+
 	NETS = {'vgg16': ('VGG16','/mnt/nfs/work1/elm/ray/trained_models/vgg16_faster_rcnn_map_iter_' + char + '_16159.caffemodel')}
 
 	args = parse_args()
 
-	char = args.char_model
-	
-	print("\n\n")
-	print("*******************************" + char + "*************************************")
+	#exit()
 
 	prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
 							'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
